@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: poi
+  namespace: api
 spec:
   replicas: 1
   selector:
@@ -44,6 +45,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: poi
+  namespace: api
 spec:
   ports:
   - port: 8080
@@ -55,6 +57,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: trips
+  namespace: api
 spec:
   replicas: 1
   selector:
@@ -99,6 +102,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: trips
+  namespace: api
 spec:
   ports:
   - port: 8081
@@ -110,6 +114,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: user-java
+  namespace: api
 spec:
   replicas: 1
   selector:
@@ -152,6 +157,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: user-java
+  namespace: api
 spec:
   ports:
   - port: 8082
@@ -163,6 +169,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: userprofile
+  namespace: api
 spec:
   replicas: 1
   selector:
@@ -205,6 +212,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: userprofile
+  namespace: api
 spec:
   ports:
   - port: 8083
@@ -216,6 +224,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tripviewer
+  namespace: web
 spec:
   replicas: 1
   selector:
@@ -235,9 +244,9 @@ spec:
         - containerPort: 80       
         env:
         - name: USERPROFILE_API_ENDPOINT
-          value: "http://userprofile:8083"
+          value: "http://userprofile.api.svc.cluster.local:8083"
         - name: TRIPS_API_ENDPOINT
-          value: "http://trips:8081"
+          value: "http://trips.api.svc.cluster.local:8081"
         resources:
           requests:
             cpu: 100m
@@ -250,6 +259,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tripviewer
+  namespace: web
 spec:
   type: LoadBalancer
   ports:

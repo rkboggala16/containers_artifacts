@@ -266,3 +266,59 @@ spec:
   - port: 80
   selector:
     app: tripviewer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: akswebedit
+  namespace: web
+subjects:
+- kind: Group
+  name: cae54da3-b524-48c5-8888-52619d0c3edc
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: akswebview
+  namespace: web
+subjects:
+- kind: Group
+  name: cae54da3-b524-48c5-8888-52619d0c3edc
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apiview
+  namespace: api
+subjects:
+- kind: Group
+  name: 771273c6-5662-487e-9da3-37322a171f76
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: apiedit
+  namespace: api
+subjects:
+- kind: Group
+  name: 771273c6-5662-487e-9da3-37322a171f76
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: edit
+  apiGroup: rbac.authorization.k8s.io

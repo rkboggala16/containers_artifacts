@@ -1,0 +1,111 @@
+# create docker network
+docker network create openhack
+
+# run sql server
+docker run -d `
+  --network openhack `
+  -e "ACCEPT_EULA=Y" `
+  -e "MSSQL_SA_PASSWORD=xSpRDH8x@@8&zN6i" `
+  --name sql1 `
+  --hostname sql1 `
+  -p 1433:1433 `
+  mcr.microsoft.com/mssql/server:2017-latest
+      
+# create mydrivingDB database
+docker exec -it sql1 "bash"
+root@sql1:/# /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "xSpRDH8x@@8&zN6i"
+1> CREATE DATABSE mydrivingDB; 
+1> GO
+1> SELECT Name from sys.databases; 
+1> GO
+
+#docker exec sql1 /opt/mssql-tools/bin/sqlcmd \
+#  -S localhost -U SA -P 'xSpRDH8x@@8&zN6i' \
+#  -Q "CREATE DATABASE mydrivingDB"
+
+# run dataload
+az login
+az acr login --name registrymjo6478.azurecr.io
+docker run --network openhack -e "SQLFQDN=sql1" -e "SQLUSER=SA" -e "SQLPASS=xSpRDH8x@@8&zN6i" -e "SQLDB=mydrivingDB" registrymjo6478.azurecr.io/dataload:1.0
+
+# build poi
+docker build -f dockerfiles\Dockerfile_3 -t "tripinsights/poi:1.0" src/poi
+
+# run poi
+docker run -d 
+  --network openhack `
+  -p 8080:80 `
+  --name poi `
+  -e "SQL_USER=SA" `
+  -e "SQL_PASSWORD=xSpRDH8x@@8&zN6i" `
+  -e "SQL_SERVER=sql1" `
+  -e "ASPNETCORE_ENVIRONMENT=Local" `
+  tripinsights/poi:1.0
+
+# test poi
+curl -i -X GET 'http://localhost:8080/api/poi' 
+   
+# build other images
+docker build -f dockerfiles\Dockerfile_4 -t "tripinsights/trips:1.0" src/trips
+docker build -f dockerfiles\Dockerfile_0 -t "tripinsights/user-java:1.0" src/user-java
+docker build -f dockerfiles\Dockerfile_2 -t "tripinsights/userprofile:1.0" src/userprofile
+docker build -f dockerfiles\Dockerfile_1 -t "tripinsights/tripviewer:1.0" src/tripviewer
+
+# run other images
+docker run -d `
+  --network openhack `
+  -p 8081:80 `
+  --name trips `
+  -e "SQL_PASSWORD=xSpRDH8x@@8&zN6i" `
+  -e "SQL_SERVER=sql1" `
+  -e "SQL_USER=SA" `
+  -e "DOCS_URI=http://temp" `
+  tripinsights/trips:1.0
+
+docker run -d `
+  --network openhack `
+  -p 8082:80 `
+  --name user-java `
+  -e "SQL_PASSWORD=xSpRDH8x@@8&zN6i" `
+  -e "SQL_SERVER=sql1" `
+  -e "SQL_USER=SA" `
+  tripinsights/user-java:1.0 
+
+docker run -d `
+  --network openhack `
+  -p 8083:80 `
+  --name userprofile `
+  -e "SQL_PASSWORD=xSpRDH8x@@8&zN6i" `
+  -e "SQL_SERVER=sql1" `
+  -e "SQL_USER=SA" `
+  tripinsights/userprofile:1.0
+  
+# health checks
+curl -i -X GET 'http://localhost:8080/api/poi/healthcheck' 
+curl -i -X GET 'http://localhost:8081/api/trips/healthcheck'
+curl -i -X GET 'http://localhost:8082/api/user-java/healthcheck'
+curl -i -X GET 'http://localhost:8083/api/user/healthcheck' 
+
+# run tripviewer
+docker run -d `
+  --network openhack `
+  -p 8084:80 `
+  --name tripviewer `
+  -e "USERPROFILE_API_ENDPOINT=http://localhost:8083" `
+  -e "TRIPS_API_ENDPOINT=http://localhost:8081" `
+  tripinsights/tripviewer:1.0
+
+# test website
+curl -i -X GET 'http://localhost:8084/' 
+
+# push to ACR
+docker tag tripinsights/poi:1.0 registrymjo6478.azurecr.io/tripinsights/poi
+docker tag tripinsights/trips:1.0 registrymjo6478.azurecr.io/tripinsights/trips
+docker tag tripinsights/user-java:1.0 registrymjo6478.azurecr.io/tripinsights/user-java
+docker tag tripinsights/userprofile:1.0 registrymjo6478.azurecr.io/tripinsights/userprofile
+docker tag tripinsights/tripviewer:1.0 registrymjo6478.azurecr.io/tripinsights/tripviewer
+docker push registrymjo6478.azurecr.io/tripinsights/poi
+docker push registrymjo6478.azurecr.io/tripinsights/trips
+docker push registrymjo6478.azurecr.io/tripinsights/user-java
+docker push registrymjo6478.azurecr.io/tripinsights/userprofile
+docker push registrymjo6478.azurecr.io/tripinsights/tripviewer

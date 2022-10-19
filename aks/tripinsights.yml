@@ -1,0 +1,258 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: poi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: poi
+  template:
+    metadata:
+      labels:
+        app: poi
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: poi
+        image: registrymjo6478.azurecr.io/tripinsights/poi:latest  
+        ports:
+        - containerPort: 80
+        env:
+        - name: SQL_USER
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: username
+        - name: SQL_PASSWORD
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: password
+        - name: SQL_SERVER
+          value: "sqlservermjo6478.database.windows.net"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: poi
+spec:
+  ports:
+  - port: 8080
+    targetPort: 80
+  selector:
+    app: poi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trips
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trips
+  template:
+    metadata:
+      labels:
+        app: trips
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: trips
+        image: registrymjo6478.azurecr.io/tripinsights/trips:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: SQL_USER
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: username
+        - name: SQL_PASSWORD
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: password
+        - name: SQL_SERVER
+          value: "sqlservermjo6478.database.windows.net"
+        - name: DOCS_URI
+          value: "http://temp"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trips
+spec:
+  ports:
+  - port: 8081
+    targetPort: 80
+  selector:
+    app: trips
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-java
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-java
+  template:
+    metadata:
+      labels:
+        app: user-java
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: user-java
+        image: registrymjo6478.azurecr.io/tripinsights/user-java:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: SQL_USER
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: username
+        - name: SQL_PASSWORD
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: password
+        - name: SQL_SERVER
+          value: "sqlservermjo6478.database.windows.net"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-java
+spec:
+  ports:
+  - port: 8082
+    targetPort: 80
+  selector:
+    app: user-java
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userprofile
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: userprofile
+  template:
+    metadata:
+      labels:
+        app: userprofile
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: userprofile
+        image: registrymjo6478.azurecr.io/tripinsights/userprofile:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: SQL_USER
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: username
+        - name: SQL_PASSWORD
+          valueFrom:
+            secretKeyRef: 
+              name: db-user-pass
+              key: password
+        - name: SQL_SERVER
+          value: "sqlservermjo6478.database.windows.net"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userprofile
+spec:
+  ports:
+  - port: 8083
+    targetPort: 80
+  selector:
+    app: userprofile
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tripviewer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tripviewer
+  template:
+    metadata:
+      labels:
+        app: tripviewer
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: tripviewer
+        image: registrymjo6478.azurecr.io/tripinsights/tripviewer:latest 
+        ports:
+        - containerPort: 80       
+        env:
+        - name: USERPROFILE_API_ENDPOINT
+          value: "http://userprofile:8083"
+        - name: TRIPS_API_ENDPOINT
+          value: "http://trips:8081"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tripviewer
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: tripviewer

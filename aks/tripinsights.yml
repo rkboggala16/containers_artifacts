@@ -21,16 +21,6 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: SQL_USER
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: username
-        - name: SQL_PASSWORD
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: password
         - name: SQL_SERVER
           value: "sqlservermjo6478.database.windows.net"
         resources:
@@ -40,6 +30,18 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
+        volumeMounts:
+        - name: secrets-store01-inline
+          mountPath: "/secrets"
+          readOnly: true
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kvname-user-msi"  
+  
 ---
 apiVersion: v1
 kind: Service
@@ -76,16 +78,6 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: SQL_USER
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: username
-        - name: SQL_PASSWORD
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: password
         - name: SQL_SERVER
           value: "sqlservermjo6478.database.windows.net"
         - name: DOCS_URI
@@ -97,6 +89,17 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
+        volumeMounts:
+        - name: secrets-store01-inline
+          mountPath: "/secrets"
+          readOnly: true
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kvname-user-msi"
 ---
 apiVersion: v1
 kind: Service
@@ -133,16 +136,6 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: SQL_USER
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: username
-        - name: SQL_PASSWORD
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: password
         - name: SQL_SERVER
           value: "sqlservermjo6478.database.windows.net"
         resources:
@@ -152,6 +145,17 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
+        volumeMounts:
+        - name: secrets-store01-inline
+          mountPath: "/secrets"
+          readOnly: true
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kvname-user-msi"
 ---
 apiVersion: v1
 kind: Service
@@ -188,16 +192,6 @@ spec:
         ports:
         - containerPort: 80
         env:
-        - name: SQL_USER
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: username
-        - name: SQL_PASSWORD
-          valueFrom:
-            secretKeyRef: 
-              name: db-user-pass
-              key: password
         - name: SQL_SERVER
           value: "sqlservermjo6478.database.windows.net"
         resources:
@@ -207,6 +201,17 @@ spec:
           limits:
             cpu: 250m
             memory: 256Mi
+        volumeMounts:
+        - name: secrets-store01-inline
+          mountPath: "/secrets"
+          readOnly: true
+      volumes:
+        - name: secrets-store01-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-kvname-user-msi"
 ---
 apiVersion: v1
 kind: Service
@@ -388,3 +393,29 @@ roleRef:
   kind: ClusterRole
   name: edit
   apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-kvname-user-msi
+  namespace: api
+spec:
+  provider: azure
+  parameters:
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: 796a2110-a55b-420f-bcc4-becc2f131a17
+    keyvaultName: team2KeyvaultOct20
+    cloudName: ""                         # [OPTIONAL for Azure] if not provided, the Azure environment defaults to AzurePublicCloud
+    objects:  |
+      array:
+        - |
+          objectName: databaseUsername
+          objectAlias: SQL_USER
+          objectType: secret
+          objectVersion: ""
+        - |
+          objectName: databasePassword
+          objectAlias: SQL_PASSWORD
+          objectType: secret
+          objectVersion: ""
+    tenantId: c5f03bb5-9e7c-4bfa-9c2f-d3d743503d2c
